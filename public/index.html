@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KCET & COMEDK College Finder</title>
   <link rel="stylesheet" href="style.css">
+  <script src="jspdf.umd.min.js"></script>
+  <script src="jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
   <header>
@@ -78,6 +80,7 @@
           <table id="kcet-table">
             <thead>
               <tr>
+                <th class="col-check"><input type="checkbox" id="kcet-select-all" title="Select all"></th>
                 <th class="col-num">#</th>
                 <th class="col-college sortable" data-sort="college">College</th>
                 <th class="col-course sortable" data-sort="course">Course</th>
@@ -102,6 +105,7 @@
           <table id="comedk-table">
             <thead>
               <tr>
+                <th class="col-check"><input type="checkbox" id="comedk-select-all" title="Select all"></th>
                 <th class="col-num">#</th>
                 <th class="col-college sortable" data-sort="college">College</th>
                 <th class="col-course sortable" data-sort="course">Course</th>
@@ -131,6 +135,10 @@
         </div>
       </details>
     </section>
+    <div id="download-bar" class="download-bar" hidden>
+      <span id="selection-count">0 selected</span>
+      <button id="download-pdf-btn" type="button">Download PDF</button>
+    </div>
   </main>
 
   <footer>

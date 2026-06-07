@@ -225,6 +225,51 @@ td.rank-ck { color: var(--rank-ck); }
   color: var(--text-muted);
 }
 
+/* Selection checkbox */
+.col-check { width: 36px; text-align: center; }
+.col-check input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent); }
+tbody tr.selected { background: rgba(49,130,206,.08); }
+tbody tr.selected:hover { background: rgba(49,130,206,.14); }
+
+/* Download bar */
+.download-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 -4px 12px rgba(0,0,0,.15);
+  z-index: 100;
+  animation: slideUp .2s ease-out;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.download-bar span {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+#download-pdf-btn {
+  padding: 0.5rem 1.5rem;
+  background: white;
+  color: var(--primary);
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+#download-pdf-btn:hover { background: #e2e8f0; }
+#download-pdf-btn:active { transform: translateY(1px); }
+
 /* Info */
 .info-section { margin-top: 1.5rem; }
 
@@ -254,7 +299,7 @@ details summary:hover { color: var(--text); }
 /* Footer */
 footer {
   margin-top: 2rem;
-  padding: 1rem 0;
+  padding: 1rem 0 3.5rem;
   border-top: 1px solid var(--border);
   font-size: 0.8rem;
   color: var(--text-muted);

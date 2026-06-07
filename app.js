@@ -1,4 +1,5 @@
 let DATA = null;
+const selectedEntries = new Map();
 
 function getGM(e) {
   return e.ranks.GM || e.ranks.GMH || e.ranks.GMR || e.ranks.GMK || null;
@@ -83,8 +84,12 @@ function renderKCET(results) {
     const gm = getGM(e);
     const cat3a = get3AG(e);
     const ck = e.comedkRank;
+    const key = entryKey('kcet', e, i);
+    const checked = selectedEntries.has(key);
     const tr = document.createElement('tr');
+    if (checked) tr.classList.add('selected');
     tr.innerHTML = `
+      <td class="col-check"><input type="checkbox" data-key="${key}" ${checked ? 'checked' : ''}></td>
       <td class="col-num">${i + 1}</td>
       <td class="col-college"><div class="college-name">${esc(e.college)}</div>${e.collegeCode ? `<div class="college-code">${esc(e.collegeCode)}</div>` : ''}</td>
       <td class="col-course">${esc(e.course)}</td>
@@ -95,6 +100,7 @@ function renderKCET(results) {
       <td class="col-rank rank-ck">${ck != null ? ck.toLocaleString() : '—'}</td>`;
     tbody.appendChild(tr);
   }
+  updateSelectAllState('kcet');
 }
 
 function renderCOMEDK(results) {
@@ -116,8 +122,12 @@ function renderCOMEDK(results) {
   for (let i = 0; i < results.length; i++) {
     const e = results[i];
     const gm = getGM(e);
+    const key = entryKey('comedk', e, i);
+    const checked = selectedEntries.has(key);
     const tr = document.createElement('tr');
+    if (checked) tr.classList.add('selected');
     tr.innerHTML = `
+      <td class="col-check"><input type="checkbox" data-key="${key}" ${checked ? 'checked' : ''}></td>
       <td class="col-num">${i + 1}</td>
       <td class="col-college"><div class="college-name">${esc(e.college)}</div>${e.collegeCode ? `<div class="college-code">${esc(e.collegeCode)}</div>` : ''}</td>
       <td class="col-course">${esc(e.course)}</td>
@@ -126,6 +136,7 @@ function renderCOMEDK(results) {
       <td class="col-rank rank-gm">${gm != null ? gm.toLocaleString() : '—'}</td>`;
     tbody.appendChild(tr);
   }
+  updateSelectAllState('comedk');
 }
 
 function esc(s) {
@@ -134,10 +145,168 @@ function esc(s) {
   return el.innerHTML;
 }
 
+function entryKey(type, e, idx) {
+  return `${type}_${e.year}_${e.collegeCode || ''}_${e.course}_${e.round || ''}_${idx}`;
+}
+
+function updateSelectionUI() {
+  const count = selectedEntries.size;
+  const bar = document.getElementById('download-bar');
+  bar.hidden = count === 0;
+  document.getElementById('selection-count').textContent = `${count} selected`;
+}
+
+function updateSelectAllState(type) {
+  const table = document.getElementById(type + '-table');
+  const selectAll = document.getElementById(type + '-select-all');
+  const boxes = table.querySelectorAll('tbody input[type="checkbox"]');
+  if (boxes.length === 0) { selectAll.checked = false; selectAll.indeterminate = false; return; }
+  const checkedCount = Array.from(boxes).filter(cb => cb.checked).length;
+  selectAll.checked = checkedCount === boxes.length;
+  selectAll.indeterminate = checkedCount > 0 && checkedCount < boxes.length;
+}
+
+function handleRowCheckbox(e) {
+  const cb = e.target;
+  if (cb.type !== 'checkbox' || !cb.dataset.key) return;
+  const tr = cb.closest('tr');
+  if (cb.checked) {
+    const key = cb.dataset.key;
+    const type = key.startsWith('kcet_') ? 'kcet' : 'comedk';
+    const results = type === 'kcet' ? lastKCETResults : lastCOMEDKResults;
+    const idx = parseInt(key.split('_').pop());
+    const entry = results[idx];
+    if (entry) selectedEntries.set(key, { type, entry });
+    tr.classList.add('selected');
+  } else {
+    selectedEntries.delete(cb.dataset.key);
+    tr.classList.remove('selected');
+  }
+  const type = cb.dataset.key.startsWith('kcet_') ? 'kcet' : 'comedk';
+  updateSelectAllState(type);
+  updateSelectionUI();
+}
+
+function handleSelectAll(type) {
+  const table = document.getElementById(type + '-table');
+  const selectAll = document.getElementById(type + '-select-all');
+  const boxes = table.querySelectorAll('tbody input[type="checkbox"]');
+  const results = type === 'kcet' ? lastKCETResults : lastCOMEDKResults;
+  boxes.forEach((cb, i) => {
+    cb.checked = selectAll.checked;
+    const tr = cb.closest('tr');
+    if (selectAll.checked) {
+      selectedEntries.set(cb.dataset.key, { type, entry: results[i] });
+      tr.classList.add('selected');
+    } else {
+      selectedEntries.delete(cb.dataset.key);
+      tr.classList.remove('selected');
+    }
+  });
+  updateSelectionUI();
+}
+
+function generatePDF() {
+  if (!window.jspdf) {
+    alert('PDF library failed to load. Check your internet connection and refresh.');
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape' });
+
+  const kcetItems = [];
+  const comedkItems = [];
+  selectedEntries.forEach(({ type, entry }) => {
+    if (type === 'kcet') kcetItems.push(entry);
+    else comedkItems.push(entry);
+  });
+
+  doc.setFontSize(16);
+  doc.setFont(undefined, 'bold');
+  doc.text('KCET & COMEDK — Selected Colleges', 14, 15);
+  doc.setFontSize(9);
+  doc.setFont(undefined, 'normal');
+  doc.setTextColor(100);
+  doc.text(`Generated on ${new Date().toLocaleDateString()} — ${selectedEntries.size} entries`, 14, 21);
+  doc.setTextColor(0);
+
+  let startY = 28;
+
+  if (kcetItems.length > 0) {
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('KCET Results', 14, startY);
+    startY += 3;
+
+    doc.autoTable({
+      startY,
+      head: [['#', 'College', 'Course', 'Year', 'Round', 'GM Rank', '3AG Rank', 'COMEDK']],
+      body: kcetItems.map((e, i) => [
+        i + 1,
+        e.college + (e.collegeCode ? ` (${e.collegeCode})` : ''),
+        e.course,
+        e.year,
+        e.round,
+        getGM(e) != null ? getGM(e).toLocaleString() : '—',
+        get3AG(e) != null ? get3AG(e).toLocaleString() : '—',
+        e.comedkRank != null ? e.comedkRank.toLocaleString() : '—'
+      ]),
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [26, 54, 93], fontSize: 8 },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 70 },
+        2: { cellWidth: 55 },
+        5: { halign: 'right' },
+        6: { halign: 'right' },
+        7: { halign: 'right' }
+      },
+      margin: { left: 14, right: 14 }
+    });
+
+    startY = doc.lastAutoTable.finalY + 10;
+  }
+
+  if (comedkItems.length > 0) {
+    if (startY > 170) { doc.addPage(); startY = 15; }
+    doc.setFontSize(12);
+    doc.setFont(undefined, 'bold');
+    doc.text('COMEDK Results', 14, startY);
+    startY += 3;
+
+    doc.autoTable({
+      startY,
+      head: [['#', 'College', 'Course', 'Year', 'COMEDK Rank', 'KCET GM']],
+      body: comedkItems.map((e, i) => [
+        i + 1,
+        e.college + (e.collegeCode ? ` (${e.collegeCode})` : ''),
+        e.course,
+        e.year,
+        e.comedkRank != null ? e.comedkRank.toLocaleString() : '—',
+        getGM(e) != null ? getGM(e).toLocaleString() : '—'
+      ]),
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [26, 54, 93], fontSize: 8 },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 80 },
+        2: { cellWidth: 60 },
+        4: { halign: 'right' },
+        5: { halign: 'right' }
+      },
+      margin: { left: 14, right: 14 }
+    });
+  }
+
+  doc.save('selected_colleges.pdf');
+}
+
 let lastKCETResults = [];
 let lastCOMEDKResults = [];
 
 function doSearch() {
+  selectedEntries.clear();
+  updateSelectionUI();
   const kcetRank = parseInt(document.getElementById('kcet-rank').value) || 0;
   const comedkRank = parseInt(document.getElementById('comedk-rank').value) || 0;
   const year = parseInt(document.getElementById('year').value) || 0;
@@ -249,6 +418,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => switchTab(tab.dataset.tab));
     });
+
+    document.getElementById('kcet-table').addEventListener('change', handleRowCheckbox);
+    document.getElementById('comedk-table').addEventListener('change', handleRowCheckbox);
+    document.getElementById('kcet-select-all').addEventListener('change', () => handleSelectAll('kcet'));
+    document.getElementById('comedk-select-all').addEventListener('change', () => handleSelectAll('comedk'));
+    document.getElementById('download-pdf-btn').addEventListener('click', generatePDF);
   } catch (err) {
     loading.textContent = 'Failed to load data. Make sure kcet_cs_data.json is served from the same origin.';
     console.error(err);
