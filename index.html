@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KCET & COMEDK College Finder</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>KCET & COMEDK College Finder</h1>
+      <p>Find Karnataka engineering colleges based on your entrance exam rank</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="filters">
+      <div class="filter-row">
+        <div class="filter-group">
+          <label for="kcet-rank">KCET Rank <span class="optional">(optional)</span></label>
+          <input type="number" id="kcet-rank" placeholder="e.g. 15000" min="1" max="60000">
+        </div>
+        <div class="filter-group">
+          <label for="comedk-rank">COMEDK Rank <span class="optional">(optional)</span></label>
+          <input type="number" id="comedk-rank" placeholder="e.g. 8000" min="1">
+        </div>
+        <div class="filter-group">
+          <label for="year">Year</label>
+          <select id="year">
+            <option value="">All Years</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="round">Round</label>
+          <select id="round">
+            <option value="">All Rounds</option>
+            <option value="R1">Round 1</option>
+            <option value="R2">Round 2</option>
+            <option value="R3">Round 3</option>
+          </select>
+        </div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-group filter-course">
+          <label for="course">Course</label>
+          <select id="course">
+            <option value="">All Courses</option>
+          </select>
+        </div>
+        <div class="filter-group filter-limit">
+          <label for="limit">Show Top</label>
+          <select id="limit">
+            <option value="30">30</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+            <option value="0">All</option>
+          </select>
+        </div>
+        <div class="filter-group filter-btn">
+          <button id="search-btn" type="button">Search</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="loading" class="loading">Loading data...</div>
+
+    <section id="results" class="results" hidden>
+      <div class="tabs">
+        <button class="tab active" data-tab="kcet">KCET Results <span id="kcet-count" class="badge">0</span></button>
+        <button class="tab" data-tab="comedk">COMEDK Results <span id="comedk-count" class="badge">0</span></button>
+      </div>
+
+      <div id="kcet-panel" class="tab-panel active">
+        <div id="kcet-summary" class="summary"></div>
+        <div class="table-wrap">
+          <table id="kcet-table">
+            <thead>
+              <tr>
+                <th class="col-num">#</th>
+                <th class="col-college sortable" data-sort="college">College</th>
+                <th class="col-course sortable" data-sort="course">Course</th>
+                <th class="col-year sortable" data-sort="year">Year</th>
+                <th class="col-round sortable" data-sort="round">Round</th>
+                <th class="col-rank sortable sorted-asc" data-sort="gm">GM Rank</th>
+                <th class="col-rank sortable" data-sort="3ag">3AG Rank</th>
+                <th class="col-rank sortable" data-sort="comedk">COMEDK</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="kcet-empty" class="empty-state" hidden>
+          <p>No colleges found. Try a higher rank or different filters.</p>
+        </div>
+      </div>
+
+      <div id="comedk-panel" class="tab-panel">
+        <div id="comedk-summary" class="summary"></div>
+        <div class="table-wrap">
+          <table id="comedk-table">
+            <thead>
+              <tr>
+                <th class="col-num">#</th>
+                <th class="col-college sortable" data-sort="college">College</th>
+                <th class="col-course sortable" data-sort="course">Course</th>
+                <th class="col-year sortable" data-sort="year">Year</th>
+                <th class="col-rank sortable sorted-asc" data-sort="comedk">COMEDK Rank</th>
+                <th class="col-rank sortable" data-sort="gm">KCET GM</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="comedk-empty" class="empty-state" hidden>
+          <p>No COMEDK results. Enter a COMEDK rank to see eligible colleges.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="info-section">
+      <details>
+        <summary>About this data</summary>
+        <div class="info-content">
+          <p><strong>KCET data:</strong> 2022–2025, Rounds 1–3. Sourced from cetonline.karnataka.gov.in cutoff PDFs.</p>
+          <p><strong>COMEDK data:</strong> 2022–2025, Round 1 only. Sourced from comedk.org cutoff PDFs.</p>
+          <p><strong>Categories shown:</strong> GM (General Merit) and 3AG (3A General) only. Regional variants (GMH, GMK, GMR, 3AH, 3AK, 3AR) are included under their parent category.</p>
+          <p><strong>How it works:</strong> Enter your KCET rank to see colleges where the closing GM or 3AG rank is at or above your rank. Lower closing rank = more competitive. Results sorted by GM rank ascending (best colleges first).</p>
+          <p id="stats-info"></p>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>Data parsed from official KCET & COMEDK cutoff PDFs. For reference only — verify with official sources before making decisions.</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
